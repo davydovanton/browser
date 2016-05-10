@@ -63,7 +63,7 @@ class Browser
 
     # This must be last item, since Ruby 1.9+ has ordered keys.
     other: "Other",
-  }
+  }.freeze
 
   VERSIONS = {
     edge: %r[Edge/([\d.]+)],
@@ -71,7 +71,7 @@ class Browser
     default: %r[(?:Version|MSIE|Firefox|QuickTime|BlackBerry[^/]+|CoreMedia v|PhantomJS|AdobeAIR)[/ ]?([a-z0-9.]+)]i,
     opera: %r[(?:Opera/.*? Version/([\d.]+)|Chrome/.*?OPR/([\d.]+))],
     ie: %r[(?:MSIE |Trident/.*?; rv:)([\d.]+)]
-  }
+  }.freeze
 
   # Define the rules which define a modern browser.
   # A rule must be a proc/lambda or any object that implements the method
@@ -118,13 +118,12 @@ class Browser
 
   # Get the browser identifier.
   def id
-    NAMES.keys
-      .find {|id| respond_to?("#{id}?") ? public_send("#{id}?") : id }
+    @id ||= NAMES.each { |id, _| break id if public_send(:"#{id}?") }
   end
 
   # Return major version.
   def version
-    if ie?
+    @version ||= if ie?
       ie_version
     else
       full_version.to_s.split(".").first
@@ -133,7 +132,7 @@ class Browser
 
   # Return the full version.
   def full_version
-    if ie?
+    @full_version ||= if ie?
       ie_full_version
     else
       _, *v = *ua.match(VERSIONS.fetch(id, VERSIONS[:default]))
@@ -197,6 +196,10 @@ class Browser
 
   def known?
     id != :other
+  end
+
+  def other?
+    true
   end
 
   # Return a meta info about this browser.
